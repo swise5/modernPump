@@ -37,6 +37,7 @@ import swise.objects.NetworkUtilities;
 import swise.objects.PopSynth;
 import swise.objects.network.GeoNode;
 import swise.objects.network.ListEdge;
+import modernPump.agents.Disease;
 import modernPump.agents.Human;
 
 import org.jfree.data.xy.XYSeries;
@@ -63,8 +64,8 @@ public class ModernPump extends SimState {
 	/////////////// Model Parameters ///////////////////////////////////
 	
 	private static final long serialVersionUID = 1L;
-	public int grid_width = 1400;
-	public int grid_height = 700;
+	public int grid_width = 800;
+	public int grid_height = 400;
 	public static double resolution = 5;// the granularity of the simulation 
 				// (fiddle around with this to merge nodes into one another)
 
@@ -294,8 +295,9 @@ public class ModernPump extends SimState {
 				aindex++;
 			}
 
+			Disease d = new Disease();
 			Human h = humans.get(random.nextInt(humans.size()));
-			h.infect();
+			h.acquireDisease(d);
 			
 			// seed the simulation randomly
 //			seedRandom(System.currentTimeMillis());

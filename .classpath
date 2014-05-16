@@ -5,5 +5,7 @@
 	<classpathentry kind="lib" path="libs/mason.16.jar"/>
 	<classpathentry kind="lib" path="libs/swiseLib.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="lib" path="libs/jts-1.13.jar"/>
+	<classpathentry kind="lib" path="libs/jfreechart-1.0.17.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

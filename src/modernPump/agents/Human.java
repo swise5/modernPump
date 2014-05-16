@@ -33,7 +33,7 @@ import com.vividsolutions.jts.linearref.LengthIndexedLine;
  * Human object. Contains attributes, makes decisions, communicates, moves, etc. 
  * 
  */
-public class Human extends TrafficAgent implements Serializable {
+public class Human extends TrafficAgent implements Serializable, DiseaseVector {
 
 	
 	private static final long serialVersionUID = 1L;
@@ -58,12 +58,12 @@ public class Human extends TrafficAgent implements Serializable {
 
 	String myID;
 	
-	boolean infected = false;
-	
 	Coordinate home;//, work; // work/school or whatever
 	
 	Stoppable observer = null;
 	Stoppable mediaUser = null;
+	
+	HashMap <String, Disease> diseases = new HashMap <String, Disease> ();
 	
 	// Time checks
 	double lastMove = -1;
@@ -113,14 +113,6 @@ public class Human extends TrafficAgent implements Serializable {
 	 * @param home - Coordinate indicating the Human's home location
 	 * @param work - Coordinate indicating the Human's workplace
 	 * @param world - reference to the containing ModernPump instance
-	 * @param communication_success_prob - probability of successfully communicating information 
-	 * 		to another Human 
-	 * @param contact_success_prob - probability of successfully getting in touch with a distant
-	 * 		Human upon trying to activate the intimate social ties
-	 * @param tweet_prob - probability of generating a Tweet upon activation
-	 * @param retweet_prob - probability of retweeting other information upon activation
-	 * @param comfortDistance - distance to dangerous obstacle mitigating Human behavior
-	 * @param observationDistance - distance to dangerous obstace within which Human perceives it
 	 * @param decayParam - parameter indicating rate of decay of influence of stressful information
 	 * 		on the Agents' stress level
 	 * @param speed - speed at which the Human moves through the environment (m per 5 min)
@@ -693,26 +685,25 @@ public class Human extends TrafficAgent implements Serializable {
 		return null;
 	}
 
-	public void infect() {
-		world.schedule.scheduleRepeating(new Steppable() {
-
-			@Override
-			public void step(SimState arg0) {
-				Bag exposed = world.humanLayer.getObjectsWithinDistance(geometry, 30);
-				if (exposed.size() <= 1)
-					return;
-				for (Object o : exposed) {
-					if (!((Human) o).infected && world.random.nextDouble() < world.infectionProb)
-						((Human) o).infect();
-				}
-			}
-
-		});
-		infected = true;
+	@Override
+	public void acquireDisease(final Disease d) {
+		d.setHost(this);
+		d.start(world.schedule);
+		diseases.put(d.getName(), d);
 		this.addIntegerAttribute("Sick", 1);
 		System.out.println(myID + " INFECTED");
 	}
+
+	@Override
+	public void loseDisease(Disease d) {
+		// TODO Auto-generated method stub		
+	}
 	
+	public boolean infectedWith(String diseaseName){
+		if(diseases.containsKey(diseaseName)) return true;
+		else return false;
+	}
+
 	////////////////////////////////////////////////////////////////////////////////////////////////
 	/////// end UTILITIES //////////////////////////////////////////////////////////////////////////
 	////////////////////////////////////////////////////////////////////////////////////////////////
