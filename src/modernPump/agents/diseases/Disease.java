@@ -1,5 +1,7 @@
-package modernPump.agents;
+package modernPump.agents.diseases;
 
+import modernPump.agents.DiseaseVector;
+import modernPump.agents.Human;
 import modernPump.sim.ModernPump;
 import sim.engine.Schedule;
 import sim.engine.SimState;

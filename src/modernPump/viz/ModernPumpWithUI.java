@@ -94,7 +94,7 @@ public class ModernPumpWithUI extends GUIState {
 				
 		humans.setField(world.humanLayer);
 		humans.setPortrayalForAll( new AttributePolyPortrayal(
-						new SimpleColorMap(0,1, new Color(255,255,0,100), new Color(255,0,0,150)),
+						new SimpleColorMap(new Color[]{new Color(0,255,0,30), Color.yellow, Color.red, Color.blue}),//new SimpleColorMap(0,1, new Color(255,255,0,100), new Color(255,0,0,150)),
 						"Sick", new Color(0,0,0,0), true, 50));
 		
 //		heatmap.setField(world.heatmap.getGrid()); 
@@ -173,7 +173,7 @@ public class ModernPumpWithUI extends GUIState {
 		ModernPumpWithUI gui =  null;
 		
 		try {
-			ModernPump lb = new ModernPump(12345);//System.currentTimeMillis());
+			ModernPump lb = new ModernPump(7033);//System.currentTimeMillis());
 			gui = new ModernPumpWithUI(lb);
 		} catch (Exception ex){
 			System.out.println(ex.getStackTrace());

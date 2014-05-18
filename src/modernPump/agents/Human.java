@@ -9,6 +9,7 @@ import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.Random;
 
+import modernPump.agents.diseases.Disease;
 import modernPump.sim.ModernPump;
 import sim.engine.SimState;
 import sim.engine.Steppable;
@@ -58,7 +59,7 @@ public class Human extends TrafficAgent implements Serializable, DiseaseVector {
 
 	String myID;
 	
-	Coordinate home;//, work; // work/school or whatever
+	Coordinate home, work, water;
 	
 	Stoppable observer = null;
 	Stoppable mediaUser = null;
@@ -702,6 +703,16 @@ public class Human extends TrafficAgent implements Serializable, DiseaseVector {
 	public boolean infectedWith(String diseaseName){
 		if(diseases.containsKey(diseaseName)) return true;
 		else return false;
+	}
+
+	@Override
+	public boolean stillExists() {
+		return this.alive;
+	}
+
+	@Override
+	public void changeStage(int stage) {
+		this.addIntegerAttribute("Sick", stage);
 	}
 
 	////////////////////////////////////////////////////////////////////////////////////////////////

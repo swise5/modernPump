@@ -37,8 +37,9 @@ import swise.objects.NetworkUtilities;
 import swise.objects.PopSynth;
 import swise.objects.network.GeoNode;
 import swise.objects.network.ListEdge;
-import modernPump.agents.Disease;
 import modernPump.agents.Human;
+import modernPump.agents.diseases.Cholera;
+import modernPump.agents.diseases.Disease;
 
 import org.jfree.data.xy.XYSeries;
 
@@ -65,7 +66,7 @@ public class ModernPump extends SimState {
 	
 	private static final long serialVersionUID = 1L;
 	public int grid_width = 800;
-	public int grid_height = 400;
+	public int grid_height = 560;
 	public static double resolution = 5;// the granularity of the simulation 
 				// (fiddle around with this to merge nodes into one another)
 
@@ -130,7 +131,7 @@ public class ModernPump extends SimState {
 	 */
 	public ModernPump(long seed) {
 		super(seed);
-		random = new MersenneTwisterFast(12345);
+		random = new MersenneTwisterFast(99872342);
 	}
 
 
@@ -149,8 +150,8 @@ public class ModernPump extends SimState {
 //			readInVectorLayer(baseLayer, dirName + "focusedArea.shp", "census tracts", new Bag());
 			
 			readInVectorLayer(populationLayer, dirName + "residentialAreas.shp", "residential areas", new Bag());
-			readInVectorLayer(roadLayer, dirName + "jacmel.shp", "road network", new Bag());
-			readInVectorLayer(waterwayLayer, dirName + "waterways.shp", "waterways", new Bag());
+			readInVectorLayer(roadLayer, dirName + "jacmelCloseup.shp", "road network", new Bag());
+			readInVectorLayer(waterwayLayer, dirName + "waterwaysCleaned.shp", "waterways", new Bag());
 //			readInRasterLayer(elevation, dirName + "ned_final.txt", "elevation", GridDataType.DOUBLE);
 			
 			//////////////////////////////////////////////
@@ -160,7 +161,7 @@ public class ModernPump extends SimState {
 			// standardize the MBRs so that the visualization lines up
 			
 			MBR = roadLayer.getMBR();
-			MBR.init(745000, 775000, 2015000, 2030000);
+			MBR.init(756000, 766000, 2015500, 2022500);
 			roadLayer.setMBR(MBR);
 			//baseLayer.setMBR(MBR);
 
@@ -217,6 +218,7 @@ public class ModernPump extends SimState {
 			roadLayer.setMBR(MBR);			
 			networkLayer.setMBR(MBR);
 			networkEdgeLayer.setMBR(MBR);
+			waterwayLayer.setMBR(MBR);
 			roadLayer.setMBR(MBR);
 			
 			System.out.println("done");
@@ -295,7 +297,8 @@ public class ModernPump extends SimState {
 				aindex++;
 			}
 
-			Disease d = new Disease();
+//			Disease d = new Disease();
+			Cholera d = new Cholera();
 			Human h = humans.get(random.nextInt(humans.size()));
 			h.acquireDisease(d);
 			
@@ -598,26 +601,6 @@ public class ModernPump extends SimState {
 			return null;
 	}
 	
-	/**
-	 * RoadClosure structure holds information about a road closure
-	 */
-	public class RoadClosure extends Information {
-		public RoadClosure(Object o, long time, Object source) {
-			super(o, time, source, 5);
-		}
-	}
-	
-	/**
-	 * EvacuationOrder structure holds information about an evacuation order
-	 */
-	public class EvacuationOrder extends Information {
-		public Geometry extent = null;
-		public EvacuationOrder(Object o, long time, Object source) {
-			super(o, time, source, 8);
-			extent = (Geometry) o;
-		}		
-	}
-	
 	/** set the seed of the random number generator */
 	void seedRandom(long number){
 		random = new MersenneTwisterFast(number);
@@ -627,7 +610,7 @@ public class ModernPump extends SimState {
 	public void setupAgents(){
 		Bag nodeBag = majorRoadNodesLayer.getGeometries();
 		int numNodes = nodeBag.size();
-		for(int i = 0; i < 1000; i++){
+		for(int i = 0; i < 2000; i++){
 			GeoNode gn = (GeoNode) nodeBag.get(random.nextInt(numNodes));
 			Coordinate myHome = (Coordinate) gn.geometry.getCoordinate().clone();
 			Human hum = new Human("id_" + random.nextLong(), myHome, myHome, this);
@@ -647,7 +630,7 @@ public class ModernPump extends SimState {
 	/**
 	 * To run the model without visualization
 	 */
-	public static void main(String[] args)
+/*	public static void main(String[] args)
     {
 		
 		if(args.length < 8){
@@ -676,4 +659,5 @@ public class ModernPump extends SimState {
 
 		System.exit(0);
     }
+    */
 }
