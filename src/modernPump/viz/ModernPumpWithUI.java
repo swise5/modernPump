@@ -45,7 +45,7 @@ public class ModernPumpWithUI extends GUIState {
 	public JFrame displayFrame;
 	
 	// Map visualization objects
-//	private GeomVectorFieldPortrayal map = new GeomVectorFieldPortrayal();
+	private GeomVectorFieldPortrayal map = new GeomVectorFieldPortrayal();
 	private GeomVectorFieldPortrayal roads = new GeomVectorFieldPortrayal();
 	private GeomVectorFieldPortrayal humans = new GeomVectorFieldPortrayal();
 
@@ -83,12 +83,10 @@ public class ModernPumpWithUI extends GUIState {
 	public void setupPortrayals() {
 		
 		ModernPump world = (ModernPump) state;
-/*		map.setField(world.baseLayer);
-		map.setPortrayalForAll(new AttributePolyPortrayal(
-				new SimpleColorMap(0,13000, new Color(100,80,30), new Color(240,220,200)),
-				"DP0010001", new Color(0,0,0,0), true));
+		map.setField(world.baseLayer);
+		map.setPortrayalForAll(new GeomPortrayal(Color.gray, false));
 		map.setImmutableField(true);
-*/		
+		
 		roads.setField(world.roadLayer);
 		roads.setPortrayalForAll(new GeomPortrayal(Color.white, false));
 				
@@ -117,7 +115,7 @@ public class ModernPumpWithUI extends GUIState {
 		display = new Display2D((int)(1.5 * sim.grid_width), (int)(1.5 * sim.grid_height), this);
 
 //		display.attach(heatmap, "Heatmap", false);
-//		display.attach(map, "Landscape");
+		display.attach(map, "Landscape");
 		display.attach(roads, "Roads");
 		display.attach(humans, "Agents");
 		

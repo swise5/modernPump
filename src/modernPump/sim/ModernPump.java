@@ -65,8 +65,8 @@ public class ModernPump extends SimState {
 	/////////////// Model Parameters ///////////////////////////////////
 	
 	private static final long serialVersionUID = 1L;
-	public int grid_width = 800;
-	public int grid_height = 560;
+	public int grid_width = 600;
+	public int grid_height = 500;
 	public static double resolution = 5;// the granularity of the simulation 
 				// (fiddle around with this to merge nodes into one another)
 
@@ -83,18 +83,16 @@ public class ModernPump extends SimState {
 	
 	/////////////// Containers ///////////////////////////////////////
 
-//	public GeomVectorField baseLayer = new GeomVectorField(grid_width, grid_height);
-	public GeomVectorField populationLayer = new GeomVectorField(grid_width, grid_height);
+	public GeomVectorField baseLayer = new GeomVectorField(grid_width, grid_height);
 	public GeomVectorField roadLayer = new GeomVectorField(grid_width, grid_height);
 	public GeomVectorField waterwayLayer = new GeomVectorField(grid_width, grid_height);	
+	public GeomVectorField medicalLayer = new GeomVectorField(grid_width, grid_height);
 	public GeomVectorField humanLayer = new GeomVectorField(grid_width, grid_height);
+	
 	public GeomVectorField networkLayer = new GeomVectorField(grid_width, grid_height);
 	public GeomVectorField networkEdgeLayer = new GeomVectorField(grid_width, grid_height);	
 	public GeomVectorField majorRoadNodesLayer = new GeomVectorField(grid_width, grid_height);
 
-//	public GeomGridField elevation = new GeomGridField();
-	
-//	public GeomGridField heatmap = new GeomGridField();
 
 	/////////////// End Containers ///////////////////////////////////////
 
@@ -143,16 +141,17 @@ public class ModernPump extends SimState {
 		super.start();
 		try {
 			
+			GeomVectorField populationLayer = new GeomVectorField(grid_width, grid_height);
+			
 			//////////////////////////////////////////////
 			///////////// READING IN DATA ////////////////
 			//////////////////////////////////////////////
 		
-//			readInVectorLayer(baseLayer, dirName + "focusedArea.shp", "census tracts", new Bag());
-			
-			readInVectorLayer(populationLayer, dirName + "residentialAreas.shp", "residential areas", new Bag());
-			readInVectorLayer(roadLayer, dirName + "jacmelCloseup.shp", "road network", new Bag());
-			readInVectorLayer(waterwayLayer, dirName + "waterwaysCleaned.shp", "waterways", new Bag());
-//			readInRasterLayer(elevation, dirName + "ned_final.txt", "elevation", GridDataType.DOUBLE);
+			readInVectorLayer(baseLayer, dirName + "haiti/haiti_meters.shp", "area", new Bag());
+			readInVectorLayer(populationLayer, dirName + "population/popCentroids_meters.shp", "residential areas", new Bag());
+			readInVectorLayer(roadLayer, dirName + "roads/roads_meters.shp", "road network", new Bag());
+			readInVectorLayer(waterwayLayer, dirName + "waterways/rivers_meters.shp", "waterways", new Bag());
+			readInVectorLayer(medicalLayer, dirName + "healthFacilities/health_meters.shp", "health facilities", new Bag());
 			
 			//////////////////////////////////////////////
 			////////////////// CLEANUP ///////////////////
@@ -161,21 +160,14 @@ public class ModernPump extends SimState {
 			// standardize the MBRs so that the visualization lines up
 			
 			MBR = roadLayer.getMBR();
-			MBR.init(756000, 766000, 2015500, 2022500);
+			MBR.init(750000, 772000, 2009500, 2028500); // 22 18  
+//			MBR.init(756000, 766000, 2015500, 2022500);
 			roadLayer.setMBR(MBR);
 			//baseLayer.setMBR(MBR);
 
 			this.grid_width = roadLayer.fieldWidth;
 			this.grid_height = roadLayer.fieldHeight;
-
-//			elevation.setMBR(MBR);
-//			baseLayer.setMBR(MBR);
 			
-//			heatmap = new GeomGridField();
-//			heatmap.setMBR(MBR);
-//			heatmap.setGrid(new IntGrid2D((int)(MBR.getWidth() / 100), (int)(MBR.getHeight() / 100), 0));
-
-
 			// clean up the road network
 			
 			System.out.print("Cleaning the road network...");
@@ -219,8 +211,9 @@ public class ModernPump extends SimState {
 			networkLayer.setMBR(MBR);
 			networkEdgeLayer.setMBR(MBR);
 			waterwayLayer.setMBR(MBR);
-			roadLayer.setMBR(MBR);
-			
+			baseLayer.setMBR(MBR);
+			medicalLayer.setMBR(MBR);
+
 			System.out.println("done");
 
 			/////////////////////
@@ -258,10 +251,10 @@ public class ModernPump extends SimState {
 			//////////////////////////////////////////////
 
 			// set up the agents in the simulation
-			setupAgents();
+			setupAgents(populationLayer);
 			humanLayer.setMBR(MBR);
 			
-			// for each of the Agents, set up relevant, environment-specific information
+/*			// for each of the Agents, set up relevant, environment-specific information
 			int aindex = 0;
 			for(Human a: humans){
 				
@@ -284,19 +277,19 @@ public class ModernPump extends SimState {
 
 				}
 				
-/*				// connect the Human's work into its personal network
+				// connect the Human's work into its personal network
 				if(a.getWork() != null)
 					connectToMajorNetwork(getClosestGeoNode(a.getWork()), a.familiarRoadNetwork);
 				
 				// set up its basic paths (fast and quicker and recomputing each time)
 				a.setupPaths();
-*/
+
 				if(aindex % 100 == 0){ // print report of progress
 					System.out.println("..." + aindex + " of " + humans.size());
 				}
 				aindex++;
 			}
-
+*/
 //			Disease d = new Disease();
 			Cholera d = new Cholera();
 			Human h = humans.get(random.nextInt(humans.size()));
@@ -467,21 +460,6 @@ public class ModernPump extends SimState {
 	}
 		
 	/**
-	 * Convenient method for incrementing the heatmap
-	 * @param geom - the geometry of the object that is impacting the heatmap
-	 */
-	public void incrementHeatmap(Geometry geom){
-	/*	Point p = geom.getCentroid();
-		
-		int x = (int)(heatmap.getGrid().getWidth()*(MBR.getMaxX() - p.getX())/(MBR.getMaxX() - MBR.getMinX())), 
-				y = (int)(heatmap.getGrid().getHeight()*(MBR.getMaxY() - p.getY())/(MBR.getMaxY() - MBR.getMinY()));
-		if(x >= 0 && y >= 0 && x < heatmap.getGrid().getWidth() && y < heatmap.getGrid().getHeight())
-			((IntGrid2D) this.heatmap.getGrid()).field[x][y]++;
-*/
-		System.out.println("disabled");
-		}
-	
-	/**
 	 * Return the GeoNode in the road network which is closest to the given coordinate
 	 * 
 	 * @param c
@@ -607,15 +585,31 @@ public class ModernPump extends SimState {
 		mySeed = number;
 	}
 	
-	public void setupAgents(){
+	public void setupAgents(GeomVectorField populationLayer){
 		Bag nodeBag = majorRoadNodesLayer.getGeometries();
+		
+		Geometry landArea = (Geometry)((MasonGeometry)baseLayer.getGeometries().get(0)).geometry.clone();
+		for(Object o: baseLayer.getGeometries()){
+			MasonGeometry g = (MasonGeometry) o;
+			landArea = landArea.union(g.geometry);
+		}
+		
 		int numNodes = nodeBag.size();
-		for(int i = 0; i < 2000; i++){
-			GeoNode gn = (GeoNode) nodeBag.get(random.nextInt(numNodes));
-			Coordinate myHome = (Coordinate) gn.geometry.getCoordinate().clone();
-			Human hum = new Human("id_" + random.nextLong(), myHome, myHome, this);
-			humanLayer.addGeometry(hum);
-			humans.add(hum);
+		for (Object o : populationLayer.getGeometries()) {
+			MasonGeometry g = (MasonGeometry) o;
+			Coordinate c = g.geometry.getCoordinate();
+			for (int i = 0; i < 10; i++) {
+//				GeoNode gn = (GeoNode) nodeBag.get(random.nextInt(numNodes));
+//				Coordinate myHome = (Coordinate) gn.geometry.getCoordinate().clone();
+				double xOffset = random.nextGaussian() * 1500 + c.x;
+				double yOffset = random.nextGaussian() * 1500 + c.y;
+				Coordinate myHome = new Coordinate(xOffset, yOffset);
+				Geometry point = fa.createPoint(myHome);
+				if(!landArea.contains(point)) continue;
+				Human hum = new Human("id_" + random.nextLong(), myHome, myHome, this);
+				humanLayer.addGeometry(hum);
+				humans.add(hum);
+			}
 		}
 	}
 	

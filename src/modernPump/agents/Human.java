@@ -59,7 +59,7 @@ public class Human extends TrafficAgent implements Serializable, DiseaseVector {
 
 	String myID;
 	
-	Coordinate home, work, water;
+	Coordinate home, water;
 	
 	Stoppable observer = null;
 	Stoppable mediaUser = null;
@@ -87,6 +87,7 @@ public class Human extends TrafficAgent implements Serializable, DiseaseVector {
 	////////// Parameters ///////////////////////////////////
 
 	double decayParam = .5;
+	double illnessThreshold = 5;
 	
 	////////// END Parameters ///////////////////////////////
 	
@@ -131,22 +132,14 @@ public class Human extends TrafficAgent implements Serializable, DiseaseVector {
 		this.speed = speed;
 		this.minSpeed = 650; // ~5mph
 
-		// if provided with an appropriate home location, find the nearest node to that point and
+		this.home = home;
+/*		// if provided with an appropriate home location, find the nearest node to that point and
 		// save it
 		if(home != null){
 			Coordinate homePoint = this.snapPointToRoadNetwork(home);
 			this.home = homePoint;
 		}
 		
-		// if provided with an appropriate work location, find the nearest node to that point and
-		// save it
-/*		if(work == null)
-			this.work = null;
-		else {
-			Coordinate workPoint = this.snapPointToRoadNetwork(work);
-			this.work = workPoint;
-		}
-*/
 		// LOCALIZE THE AGENT INITIALLY
 		
 		// find the closest edge to the Human initially (for ease of path-planning)
@@ -174,12 +167,12 @@ public class Human extends TrafficAgent implements Serializable, DiseaseVector {
 		currentIndex = segment.indexOf(position);
 
 		// SCHEDULE THE AGENT'S VARIOUS PROCESSES
-		
+		*/
 		// schedule the Human to check in and make decisions at the beginning of the simulation (with
 		// ordering 100 so that it runs after the wildfire, etc)
 		world.schedule.scheduleOnce(this, 100);
 		
-/*		// schedule the Human to observe its immediate surroundings at least every hour, with ordering
+/*	/*	// schedule the Human to observe its immediate surroundings at least every hour, with ordering
 		// 50 so that it always observes before making its decisions
 		observer = world.schedule.scheduleRepeating(new Steppable (){
 			private static final long serialVersionUID = 1L;
@@ -238,6 +231,23 @@ public class Human extends TrafficAgent implements Serializable, DiseaseVector {
 		// get the time
 		int time = (int) world.schedule.getTime();
 
+		// if super sick and 
+		if(stress > illnessThreshold){
+			Bag medicalCenters = world.medicalLayer.getObjectsWithinDistance(this.geometry, 1000);
+			if(medicalCenters.size() > 0){
+				headFor(((MasonGeometry)medicalCenters.get(0)).geometry.getCoordinate(), null);
+			}
+			else if(home.distance(geometry.getCoordinate()) > ModernPump.resolution){
+				headFor(home, familiarRoadNetwork);
+			}
+			else{ // super sick, just stay in place and check back in an hour
+				world.schedule.scheduleOnce(time + 12, 100 + world.random.nextInt(world.humans.size()), this);
+				return;
+			}
+			world.schedule.scheduleOnce(time + 1, 100 + world.random.nextInt(world.humans.size()), this);
+			return;
+		}
+		
 		// if the Human is moving, keep moving! 
 		if(currentActivity == activity_travel && path != null){
 //			System.out.println("keep moving");
@@ -494,6 +504,24 @@ public class Human extends TrafficAgent implements Serializable, DiseaseVector {
 		startPoint = this.geometry.getCoordinate();
 		goalPoint = null;
 
+		double wanderThreshold = 10000000;
+		if(startPoint.distance(place) < wanderThreshold){
+			targetDestination = (Coordinate) place.clone();
+			goalPoint = targetDestination;
+			MasonGeometry mg = new MasonGeometry(world.fa.createLineString(new Coordinate[] {startPoint, goalPoint}));;
+			mg.addStringAttribute("open", "OPEN");
+			ListEdge e = new ListEdge(new Edge(new GeoNode(this.geometry), new GeoNode(world.fa.createPoint(place)), mg), mg.geometry.getLength());
+			path = new ArrayList <Edge> ();
+			path.add(e);
+			direction = 1;
+			node = (GeoNode) e.getFrom();
+			LineString ls = (LineString)mg.geometry;
+			segment = new LengthIndexedLine(ls);
+			startIndex = segment.getStartIndex();
+			endIndex = segment.getEndIndex();
+			return 1;
+		}
+		
 		// if the current node and the current edge don't match, there's a problem with the Human's understanding of its
 		// current position
 		if(!(edge.getTo().equals(node) || edge.getFrom().equals(node))){
@@ -657,26 +685,8 @@ public class Human extends TrafficAgent implements Serializable, DiseaseVector {
 	
 	// GETTERS
 	public Coordinate getHome(){ return home; }
-//	public Coordinate getWork(){ return work; }
 	public int getActivity(){ return this.currentActivity; }
 	public double getValence(){ return this.stress; }
-	
-	/**
-	 * Generates default paths between home and work, to ease on computation during the actual run
-	 */
-	public void setupPaths(){
-/*		if(work != null){
-			GeoNode workNode = world.getClosestGeoNode(this.work);
-			GeoNode homeNode = world.getClosestGeoNode(this.home);
-
-			ArrayList <Edge> pathFromHomeToWork = pathfinder.astarPath(homeNode, workNode, world.roads);
-			this.familiarPaths.add(pathFromHomeToWork);
-			
-			ArrayList <Edge> pathFromWorkToHome = pathfinder.astarPath(workNode, homeNode, world.roads);
-			this.familiarPaths.add(pathFromWorkToHome);
-		}
-*/
-	}
 	
 	/**  Wrapper around step, so that it can be called from other functions */
 	void stepWrapper(){ this.step(world); }
@@ -693,11 +703,14 @@ public class Human extends TrafficAgent implements Serializable, DiseaseVector {
 		diseases.put(d.getName(), d);
 		this.addIntegerAttribute("Sick", 1);
 		System.out.println(myID + " INFECTED");
+		stress = 1;
 	}
 
 	@Override
 	public void loseDisease(Disease d) {
-		// TODO Auto-generated method stub		
+		// start running again!
+		world.schedule.scheduleOnce(world.schedule.getTime() + 1, 100 + world.random.nextInt(world.humans.size()), this);
+		stress = 1;
 	}
 	
 	public boolean infectedWith(String diseaseName){
@@ -713,6 +726,10 @@ public class Human extends TrafficAgent implements Serializable, DiseaseVector {
 	@Override
 	public void changeStage(int stage) {
 		this.addIntegerAttribute("Sick", stage);
+		if(stage == 1)
+			stress = 3;
+		else if(stage == 2)
+			stress = 7;
 	}
 
 	////////////////////////////////////////////////////////////////////////////////////////////////
