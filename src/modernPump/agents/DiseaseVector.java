@@ -15,4 +15,6 @@ public interface DiseaseVector {
 	public boolean stillExists();
 	
 	public void changeStage(int stage);
+	
+	public void receiveTreatment(String type);
 }

@@ -38,6 +38,7 @@ import swise.objects.PopSynth;
 import swise.objects.network.GeoNode;
 import swise.objects.network.ListEdge;
 import modernPump.agents.Human;
+import modernPump.agents.HumanTeleporter;
 import modernPump.agents.diseases.Cholera;
 import modernPump.agents.diseases.Disease;
 
@@ -98,13 +99,13 @@ public class ModernPump extends SimState {
 
 	/////////////// Objects //////////////////////////////////////////////
 
-	
+	public Geometry landArea = null;
 	public Bag roadNodes = new Bag();
 	public Network roads = new Network(false);
 	HashMap <MasonGeometry, ArrayList <GeoNode>> localNodes;
 	public Bag terminus_points = new Bag();
 
-	public ArrayList <Human> humans = new ArrayList <Human> (2000);
+	public ArrayList <HumanTeleporter> humans = new ArrayList <HumanTeleporter> (2000);
 	public Network agentSocialNetwork = new Network();
 	
 	public GeometryFactory fa = new GeometryFactory();
@@ -129,7 +130,7 @@ public class ModernPump extends SimState {
 	 */
 	public ModernPump(long seed) {
 		super(seed);
-		random = new MersenneTwisterFast(99872342);
+		random = new MersenneTwisterFast(703356);
 	}
 
 
@@ -161,7 +162,7 @@ public class ModernPump extends SimState {
 			
 			MBR = roadLayer.getMBR();
 //			MBR.init(740000, 780000, 2000000, 2040000); // 35 22  
-			MBR.init(738000, 779000, 2008000, 2034000); // 35 22  
+			MBR.init(740000, 779000, 2009000, 2034000); // 35 22  
 //			MBR.init(750000, 772000, 2009500, 2028500); // 22 18  
 //			MBR.init(756000, 766000, 2015500, 2022500);
 			roadLayer.setMBR(MBR);
@@ -169,6 +170,14 @@ public class ModernPump extends SimState {
 
 			this.grid_width = roadLayer.fieldWidth;
 			this.grid_height = roadLayer.fieldHeight;
+			
+			// base layer
+			
+			landArea = (Geometry)((MasonGeometry)baseLayer.getGeometries().get(0)).geometry.clone();
+			for(Object o: baseLayer.getGeometries()){
+				MasonGeometry g = (MasonGeometry) o;
+				landArea = landArea.union(g.geometry);
+			}
 			
 			// clean up the road network
 			
@@ -215,6 +224,7 @@ public class ModernPump extends SimState {
 			waterwayLayer.setMBR(MBR);
 			baseLayer.setMBR(MBR);
 			medicalLayer.setMBR(MBR);
+			humanLayer.setMBR(MBR);
 
 			System.out.println("done");
 
@@ -294,14 +304,14 @@ public class ModernPump extends SimState {
 */
 //			Disease d = new Disease();
 			Cholera d = new Cholera();
-			Human h = humans.get(random.nextInt(humans.size()));
+			HumanTeleporter h = humans.get(random.nextInt(humans.size()));
 			h.acquireDisease(d);
 			
 			// seed the simulation randomly
 //			seedRandom(System.currentTimeMillis());
 
 			// schedule the reporter to run
-			setupReporter();
+//			setupReporter();
 
 		} catch (Exception e) { e.printStackTrace();}
     }
@@ -590,12 +600,6 @@ public class ModernPump extends SimState {
 	public void setupAgents(GeomVectorField populationLayer){
 		Bag nodeBag = majorRoadNodesLayer.getGeometries();
 		
-		Geometry landArea = (Geometry)((MasonGeometry)baseLayer.getGeometries().get(0)).geometry.clone();
-		for(Object o: baseLayer.getGeometries()){
-			MasonGeometry g = (MasonGeometry) o;
-			landArea = landArea.union(g.geometry);
-		}
-		
 		int numNodes = nodeBag.size();
 		for (Object o : populationLayer.getGeometries()) {
 			MasonGeometry g = (MasonGeometry) o;
@@ -603,12 +607,16 @@ public class ModernPump extends SimState {
 			for (int i = 0; i < 10; i++) {
 //				GeoNode gn = (GeoNode) nodeBag.get(random.nextInt(numNodes));
 //				Coordinate myHome = (Coordinate) gn.geometry.getCoordinate().clone();
-				double xOffset = random.nextGaussian() * 1500 + c.x;
-				double yOffset = random.nextGaussian() * 1500 + c.y;
+//				double distance = Math.abs(random.nextGaussian()) * 1500;
+//				double degrees = random.nextDouble() * 2 * Math.PI;
+//				double xOffset = distance * Math.cos(degrees) + c.x;
+				double xOffset = random.nextGaussian() * 1000 + c.x;
+//				double yOffset = distance * Math.sin(degrees) + c.y;
+				double yOffset = random.nextGaussian() * 1000 + c.y;
 				Coordinate myHome = new Coordinate(xOffset, yOffset);
 				Geometry point = fa.createPoint(myHome);
 				if(!landArea.contains(point)) continue;
-				Human hum = new Human("id_" + random.nextLong(), myHome, myHome, this);
+				HumanTeleporter hum = new HumanTeleporter("id_" + random.nextLong(), myHome, myHome, this);
 				humanLayer.addGeometry(hum);
 				humans.add(hum);
 			}
@@ -619,7 +627,7 @@ public class ModernPump extends SimState {
 	public void resetLayers(){
 		MBR = roadLayer.getMBR();
 //		MBR.init(740000, 780000, 2000000, 2040000); // 35 22  
-		MBR.init(738000, 779000, 2008000, 2034000); // 35 22  
+		MBR.init(740000, 779000, 2009000, 2034000); // 35 22  
 //		MBR.init(745000, 775000, 2015000, 2030000);
 		this.humanLayer.setMBR(MBR);
 		//this.baseLayer.setMBR(MBR);

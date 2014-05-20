@@ -19,8 +19,11 @@ import sim.field.network.Network;
 import sim.util.Bag;
 import sim.util.geo.AttributeValue;
 import sim.util.geo.MasonGeometry;
+import sim.util.geo.PointMoveTo;
 import swise.agents.communicator.Communicator;
 import swise.agents.communicator.Information;
+import swise.agents.MobileAgent;
+import swise.agents.SpatialAgent;
 import swise.agents.TrafficAgent;
 import swise.objects.NetworkUtilities;
 import swise.objects.network.GeoNode;
@@ -34,7 +37,7 @@ import com.vividsolutions.jts.linearref.LengthIndexedLine;
  * Human object. Contains attributes, makes decisions, communicates, moves, etc. 
  * 
  */
-public class Human extends TrafficAgent implements Serializable, DiseaseVector {
+public class HumanTeleporter extends TrafficAgent implements Serializable, DiseaseVector {
 
 	
 	private static final long serialVersionUID = 1L;
@@ -52,7 +55,6 @@ public class Human extends TrafficAgent implements Serializable, DiseaseVector {
 	
 	public static int activity_travel = 1;
 	public static int activity_work = 2;
-	public static int activity_relax = 3;
 	public static int activity_sleep = 4;
 	
 	////////// Attributes ///////////////////////////////////
@@ -92,8 +94,6 @@ public class Human extends TrafficAgent implements Serializable, DiseaseVector {
 	////////// END Parameters ///////////////////////////////
 	
 		
-	public GeoNode getNode() {return node;}
-	
 	/**
 	 * Default Wrapper Constructor: provides the default parameters
 	 * 
@@ -103,7 +103,7 @@ public class Human extends TrafficAgent implements Serializable, DiseaseVector {
 	 * @param work - Coordinate indicating the Human's workplace
 	 * @param world - reference to the containing ModernPump instance
 	 */
-	public Human(String id, Coordinate position, Coordinate home, ModernPump world){		
+	public HumanTeleporter(String id, Coordinate position, Coordinate home, ModernPump world){		
 		this(id, position, home, world, .5, 800);
 	}
 	
@@ -119,7 +119,7 @@ public class Human extends TrafficAgent implements Serializable, DiseaseVector {
 	 * 		on the Agents' stress level
 	 * @param speed - speed at which the Human moves through the environment (m per 5 min)
 	 */
-	public Human(String id, Coordinate position, Coordinate home, ModernPump world, double decayParam, double speed){
+	public HumanTeleporter(String id, Coordinate position, Coordinate home, ModernPump world, double decayParam, double speed){
 
 		super((new GeometryFactory()).createPoint(position));
 		
@@ -129,45 +129,9 @@ public class Human extends TrafficAgent implements Serializable, DiseaseVector {
 		this.space = world.humanLayer;
 
 		this.decayParam = decayParam;
-		this.speed = speed;
-		this.minSpeed = 650; // ~5mph
 
 		this.home = home;
-/*		// if provided with an appropriate home location, find the nearest node to that point and
-		// save it
-		if(home != null){
-			Coordinate homePoint = this.snapPointToRoadNetwork(home);
-			this.home = homePoint;
-		}
-		
-		// LOCALIZE THE AGENT INITIALLY
-		
-		// find the closest edge to the Human initially (for ease of path-planning)
-		edge = world.getClosestEdge(position);
-		
-		// if no such edge exists, there is a problem with the setup
-		if(edge == null){ 
-			System.out.println(this.myID + "\tINIT_ERROR");
-			return;
-		}
 
-		// figure out the closest GeoNode to the Human's initial position
-		GeoNode n1 = (GeoNode) edge.getFrom();
-		GeoNode n2 = (GeoNode) edge.getTo();
-		
-		if(n1.geometry.getCoordinate().distance(position) <= n2.geometry.getCoordinate().distance(position))
-			node = n1;
-		else 
-			node = n2;
-
-		// do all the setup regarding the Human's position on the road segment
-		segment = new LengthIndexedLine((LineString)((MasonGeometry)edge.info).geometry);
-		startIndex = segment.getStartIndex();
-		endIndex = segment.getEndIndex();
-		currentIndex = segment.indexOf(position);
-
-		// SCHEDULE THE AGENT'S VARIOUS PROCESSES
-		*/
 		// schedule the Human to check in and make decisions at the beginning of the simulation (with
 		// ordering 100 so that it runs after the wildfire, etc)
 		world.schedule.scheduleOnce(this, 100);
@@ -176,7 +140,7 @@ public class Human extends TrafficAgent implements Serializable, DiseaseVector {
 		currentActivity = activity_sleep;
 		
 		// add the Human to the space
-		space.addGeometry(this);
+//		space.addGeometry(this);
 		
 		// set the Human to not initially be evacuating
 		this.addIntegerAttribute("Sick", 0);		
@@ -193,13 +157,32 @@ public class Human extends TrafficAgent implements Serializable, DiseaseVector {
 		
 		// update the heatmap, as the Human is moving (or trying to, at least)
 		//world.incrementHeatmap(this.geometry);
-		
-		myLastSpeed = -1; // reset this for accuracy in reporting
-		
-		// attempt to utilize the superclass's movement method
-		int moveSuccess = super.navigate(resolution);
+
+		if(targetDestination == null)
+			this.updateLoc(this.targetDestination);
+		targetDestination = null;
 		
 		return 1;
+	}
+	
+	Coordinate pickPlaceToVisit(){
+		
+		Coordinate destination = world.humans.get(world.random.nextInt(world.humans.size())).home;
+		double stdDev = world.random.nextGaussian();
+		double distanceStdDev = 10000 * Math.abs(stdDev), distanceMin = 10000 * (Math.abs(stdDev) - 1);
+//		if(distanceStdDev >= 30000)
+//			System.out.println(distanceStdDev / 3.);
+		int tries = 0;
+		while(destination.distance(home) > distanceStdDev || destination.distance(home) < distanceMin){
+			destination = world.humans.get(world.random.nextInt(world.humans.size())).home;
+			tries++;
+			if(tries > 1000) 
+				distanceMin = 0;
+			if(tries > 5000)
+				distanceStdDev = Double.MAX_VALUE;
+		}
+
+		return destination;
 	}
 	
 	/**
@@ -222,29 +205,32 @@ public class Human extends TrafficAgent implements Serializable, DiseaseVector {
 				headFor(home, familiarRoadNetwork);
 			}
 			else{ // super sick, just stay in place and check back in an hour
-				currentActivity = activity_relax;
+				currentActivity = activity_sleep;
 				world.schedule.scheduleOnce(time + 12, 100 + world.random.nextInt(world.humans.size()), this);
 				return;
 			}
-			world.schedule.scheduleOnce(time + 1, 100 + world.random.nextInt(world.humans.size()), this);
+			double timeDiff = Math.max(1,  geometry.getCoordinate().distance(targetDestination) / this.speed);
+			world.schedule.scheduleOnce(time + timeDiff, 100 + world.random.nextInt(world.humans.size()), this);
 			return;
 		}
 		
 		// if the Human is moving, keep moving! 
-		if(currentActivity == activity_travel && path != null){
-
+		if(currentActivity == activity_travel && targetDestination != null){
+		//	System.out.println("move");
 			navigate(ModernPump.resolution);
 			world.schedule.scheduleOnce(time + 1, 100 + world.random.nextInt(world.humans.size()), this);
+			targetDestination = null;
+			currentActivity = activity_work;
 			return;
 		}
 
 		// if the Human is traveling but has reached the end of its path, either transition into working or relaxing at home
-		else if(currentActivity == activity_travel && path == null){
+		else if(currentActivity == activity_travel && targetDestination == null){
 
-//			System.out.println("transition at end of path");
 
 			// if at work, start working
-			if(geometry.getCoordinate().distance(targetDestination) <= ModernPump.resolution && targetDestination.distance(home) > ModernPump.resolution){
+			if(geometry.getCoordinate().distance(home) > ModernPump.resolution){
+	//			System.out.println("transition at end of path");
 				if(stress > illnessThreshold && (world.medicalLayer.getObjectsWithinDistance(this.geometry, ModernPump.resolution).size() > 0)){
 					
 					System.out.println(this.myID + " CHECKED INTO MEDICAL FACILITY");
@@ -255,26 +241,29 @@ public class Human extends TrafficAgent implements Serializable, DiseaseVector {
 					}
 				
 					stress = 0;
-					world.schedule.scheduleOnce(time + 288 * 4, this);
+					world.schedule.scheduleOnce(time + 24, this);
 					return;
 				}
 				else {
 					currentActivity = activity_work;
-					int nextTime = Math.max(time + 1, 12 * (1 + world.random.nextInt(8))); // random offset of up to an hour in either direction
+					int nextTime = Math.max(time + 1, 1 + world.random.nextInt(4)); // random offset of up to an hour in either direction
 					world.schedule.scheduleOnce(nextTime, 100 + world.random.nextInt(world.humans.size()), this);
 				}
 			}
 			// if at home, spend time at home
-			else if(geometry.getCoordinate().distance(home) <= ModernPump.resolution){
-				currentActivity = activity_relax;
-				int nextTime = Math.max(time + 1, getTime(22,0) + 6 - world.random.nextInt(13));  // random offset of up to an hour in either direction
-				world.schedule.scheduleOnce(nextTime, 100 + world.random.nextInt(world.humans.size()), this);				
+			else if(geometry.getCoordinate().distance(home) <= ModernPump.resolution && time % 24 > 18){
+		//		System.out.println("transition at end of path");
+				currentActivity = activity_sleep;
+				int nextTime = time + Math.max(1, 24 - (time % 24) - world.random.nextInt(3) + 9); // should be: next day, plus aobut 8 hrs
+				world.schedule.scheduleOnce(nextTime, 100 + world.random.nextInt(world.humans.size()), this);
+				return;
 			}
 			else {
-				// reset path and head for target again!
-				headFor(this.targetDestination, familiarRoadNetwork);
-				navigate(ModernPump.resolution);
+				this.currentActivity = this.activity_travel;
+				headFor(pickPlaceToVisit(), familiarRoadNetwork);
 				world.schedule.scheduleOnce(time + 1, 100 + world.random.nextInt(world.humans.size()), this);
+				return;
+
 			}
 			
 			return;
@@ -282,21 +271,19 @@ public class Human extends TrafficAgent implements Serializable, DiseaseVector {
 
 		// if the Human is just getting up in the morning, stay in house until time to leave
 		else if(currentActivity == activity_sleep){
-//			System.out.println("wakeup");
+	//		System.out.println("wakeup");
 
-			currentActivity = activity_relax;
-			int nextTime = Math.max(time + 1, getTime(7, 9) + 6 - world.random.nextInt(13));  // random offset of up to an hour in either direction
-			world.schedule.scheduleOnce(nextTime, 100 + world.random.nextInt(world.humans.size()), this);
+			this.currentActivity = this.activity_travel;
+			headFor(pickPlaceToVisit(), familiarRoadNetwork);
+			world.schedule.scheduleOnce(time + 1, 100 + world.random.nextInt(world.humans.size()), this);
 			return;
 		}
 
 		// if the Human has just gotten off work, head home
 		else if(currentActivity == activity_work){
 			
-//			System.out.println("go home");
+	//		System.out.println("go home");
 
-			path = null;
-			
 			this.currentActivity = this.activity_travel;
 			headFor(home, familiarRoadNetwork);
 			navigate(ModernPump.resolution);
@@ -304,64 +291,13 @@ public class Human extends TrafficAgent implements Serializable, DiseaseVector {
 			return;
 		}
 		
-		// if it's time to go to bed, etc.
-		else if(currentActivity == activity_relax && ((time % 288) >= 252)){ // it's after 9:00pm
-//			System.out.println("go to sleep");
-
-			currentActivity = activity_sleep;
-			int nextTime = Math.max(time + 1, getTime(7, 0) + 6 - world.random.nextInt(13));  // random offset of up to an hour in either direction
-			world.schedule.scheduleOnce(nextTime, 100 + world.random.nextInt(world.humans.size()), this);
-			return;
-		}
-		
-		// if it's time for work, go to work
-		else if(currentActivity == activity_relax && ((time % 288) >= 87)){ // it's after 7:15am
-			
-//			System.out.println("go to place");
-
-			path = null;		
-			this.currentActivity = this.activity_travel;
-			Coordinate destination = world.humans.get(world.random.nextInt(world.humans.size())).home;
-			while(destination.distance(home) >= 1500 * Math.abs(world.random.nextGaussian()))
-				destination = world.humans.get(world.random.nextInt(world.humans.size())).home;
-			headFor(destination, familiarRoadNetwork);
-			navigate(ModernPump.resolution);
-			world.schedule.scheduleOnce(time + 1, 100 + world.random.nextInt(world.humans.size()), this);
-		}
-
 		// default for no other case
 		else {
 			System.out.println("PROBLEM WITH THIS AGENT");
 		}
 		
 	}
-	
-	/**
-	 * Return the timestep that will correspond with the next instance of the given hour:minute combination
-	 * 
-	 * @param desiredHour - the hour to find
-	 * @param desiredMinuteBlock - the minute to find
-	 * @return the timestep of the next hour:minute combination
-	 */
-	int getTime(int desiredHour, int desiredMinuteBlock){
-
-		int result = 0;
 		
-		// the current time in the day
-		int time = (int)(world.schedule.getTime());
-		int numDaysSoFar = (int) Math.floor(time / 288);
-		int currentTime = time % 288;
-
-		int goalTime = desiredHour * 12 + desiredMinuteBlock;
-		
-		if(goalTime < currentTime)
-			result = 288 * (numDaysSoFar + 1) + goalTime;
-		else
-			result = 288 * numDaysSoFar + goalTime;
-		
-		return result;
-	}
-	
 	/**
 	 * Check in on the Human and run its decision tree. Schedule when next to check in.
 	 */
@@ -404,9 +340,6 @@ public class Human extends TrafficAgent implements Serializable, DiseaseVector {
 		if(stopper != null)
 			stopper.stop();
 		
-		// takes the Human out of the environment
-		if(edge != null && edge instanceof ListEdge) 
-			((ListEdge)edge).removeElement(this);
 		world.humans.remove(this);
 		
 		// finally, reset position information
@@ -433,7 +366,6 @@ public class Human extends TrafficAgent implements Serializable, DiseaseVector {
 	void headStraightTo(Coordinate place){
 		
 		targetDestination = (Coordinate) place.clone();
-		goalPoint = targetDestination;
 		
 		// attempt to find path
 		ArrayList <LineString> pathComponents = clearPath(this.geometry.getCoordinate(), targetDestination);
@@ -489,111 +421,8 @@ public class Human extends TrafficAgent implements Serializable, DiseaseVector {
 
 		// first, record from where the agent is starting
 		startPoint = this.geometry.getCoordinate();
-		goalPoint = null;
-
-		double wanderThreshold = 10000000;
-		if(startPoint.distance(place) < wanderThreshold){
-			headStraightTo(place);
-			return 1;
-		}
-		
-		// if the current node and the current edge don't match, there's a problem with the Human's understanding of its
-		// current position
-		if(!(edge.getTo().equals(node) || edge.getFrom().equals(node))){
-			System.out.println( (int)world.schedule.getTime() + "\t" + this.myID + "\tMOVE_ERROR_mismatch_between_current_edge_and_node");
-			return -2;
-		}
-
-		// FINDING THE GOAL //////////////////
-
-		// set up goal information
-		targetDestination = this.snapPointToRoadNetwork(place);
-		
-		GeoNode destinationNode = world.getClosestGeoNode(targetDestination);//place);
-		if(destinationNode == null){
-			System.out.println((int)world.schedule.getTime() + "\t" + this.myID + "\tMOVE_ERROR_invalid_destination_node");
-			return -2;
-		}
-
-		// be sure that if the target location is not a node but rather a point along an edge, that
-		// point is recorded
-		if(destinationNode.geometry.getCoordinate().distance(targetDestination) > ModernPump.resolution)
-			goalPoint = targetDestination;
-		else
-			goalPoint = null;
-
-
-		// FINDING A PATH /////////////////////
-
-		if(path == null)
-			path = pathfinder.astarPath(node, destinationNode, roadNetwork);
-
-		// if it fails, give up
-		if (path == null){
-			return -1;
-		}
-
-		// CHECK FOR BEGINNING OF PATH ////////
-
-		// we want to be sure that we're situated on the path *right now*, and that if the path
-		// doesn't include the link we're on at this moment that we're both
-		// 		a) on a link that connects to the startNode
-		// 		b) pointed toward that startNode
-		// Then, we want to clean up by getting rid of the edge on which we're already located
-
-		// Make sure we're in the right place, and face the right direction
-		if (edge.getTo().equals(node))
-			direction = 1;
-		else if (edge.getFrom().equals(node))
-			direction = -1;
-		else {
-			System.out.println((int)world.schedule.getTime() + "\t" + this.myID + "MOVE_ERROR_mismatch_between_current_edge_and_node_2");
-			return -2;
-		}
-
-		// reset stuff
-		if(path.size() == 0 && targetDestination.distance(geometry.getCoordinate()) > world.resolution){
-			path.add(edge);
-			node = (GeoNode) edge.getOtherNode(node); // because it will look for the other side in the navigation!!! Tricky!!
-		}
-
-		// CHECK FOR END OF PATH //////////////
-
-		// we want to be sure that if the goal point exists and the Human isn't already on the edge 
-		// that contains it, the edge that it's on is included in the path
-		if (goalPoint != null) {// && path.size() > 0) {
-
-			ListEdge myLastEdge = world.getClosestEdge(goalPoint);
-			
-			if(myLastEdge == null){
-				System.out.println((int)world.schedule.getTime() + "\t" + this.myID + "\tMOVE_ERROR_goal_point_is_too_far_from_any_edge");
-				return -2;
-			}
-			
-			// make sure the point is on the last edge
-			Edge lastEdge;
-			if (path.size() > 0)
-				lastEdge = path.get(0);
-			else
-				lastEdge = edge;
-
-			Point goalPointGeometry = world.fa.createPoint(goalPoint);
-			if(!lastEdge.equals(myLastEdge) && ((MasonGeometry)lastEdge.info).geometry.distance(goalPointGeometry) > ModernPump.resolution){
-				if(lastEdge.getFrom().equals(myLastEdge.getFrom()) || lastEdge.getFrom().equals(myLastEdge.getTo()) 
-						|| lastEdge.getTo().equals(myLastEdge.getFrom()) || lastEdge.getTo().equals(myLastEdge.getTo()))
-					path.add(0, myLastEdge);
-				else{
-					System.out.println((int)world.schedule.getTime() + "\t" + this.myID + "\tMOVE_ERROR_goal_point_edge_is_not_included_in_the_path");
-					return -2;
-				}
-			}
-			
-		}
-
-		// set up the coordinates
-		this.startIndex = segment.getStartIndex();
-		this.endIndex = segment.getEndIndex();
-
+		targetDestination = (Coordinate) place.clone();
+		//headStraightTo(place);
 		return 1;
 	}
 
@@ -606,33 +435,7 @@ public class Human extends TrafficAgent implements Serializable, DiseaseVector {
 	/////// UTILITIES //////////////////////////////////////////////////////////////////////////////
 	////////////////////////////////////////////////////////////////////////////////////////////////
 	
-	
-	/**
-	 * Snap the coordinate to the nearest point on the road network
-	 * 
-	 * @param c - the point in question
-	 * @return - nearest point on the road network
-	 */
-	public Coordinate snapPointToRoadNetwork(Coordinate c){
-		ListEdge myEdge = null;
-		double resolution = ModernPump.resolution;
-		
-		// if the network hasn't been properly set up, don't try to find something on it =\
-		if(world.networkEdgeLayer.getGeometries().size() == 0) 
-			return null;
-		
-		// while there's no edge, expand outward until the Human finds one
-		while(myEdge == null){
-			myEdge = world.getClosestEdge(c, resolution);
-			resolution *= 10;
-		}
-		
-		// having found a line, find the index of the point on that line
-		LengthIndexedLine closestLine = new LengthIndexedLine((LineString) (((MasonGeometry)myEdge.info).getGeometry()));
-		double myIndex = closestLine.indexOf(c);
-		return closestLine.extractPoint(myIndex);
-	}
-	
+
 	/**
 	 * Comparator
 	 */
@@ -693,11 +496,24 @@ public class Human extends TrafficAgent implements Serializable, DiseaseVector {
 
 	@Override
 	public void receiveTreatment(String type) {
-		ArrayList <Disease> cured = new ArrayList <Disease> ();
-		for(Disease d: this.diseases.values()){
-			
-		}
+		// TODO Auto-generated method stub
 		
+	}
+
+	/**
+	 * Change the position of the MobileAgent in the space in which it is embedded
+	 * @param c - the new position of the MobileAgent
+	 */
+	protected void updateLoc(Coordinate c){
+		PointMoveTo p = new PointMoveTo();
+		p.setCoordinate(c);
+		geometry.apply(p);
+		geometry.geometryChanged();
+	}
+
+	@Override
+	public Geometry getGeometry() {
+		return geometry;
 	}
 
 	////////////////////////////////////////////////////////////////////////////////////////////////

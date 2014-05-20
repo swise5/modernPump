@@ -1,7 +1,7 @@
 package modernPump.agents.diseases;
 
 import modernPump.agents.DiseaseVector;
-import modernPump.agents.Human;
+import modernPump.agents.HumanTeleporter;
 import modernPump.sim.ModernPump;
 import sim.engine.Schedule;
 import sim.engine.SimState;
@@ -13,8 +13,8 @@ public class Cholera extends Disease {
 	int stage = 0;
 	int timeInStage = 0;
 	
-	int incubationPeriod = 334; // ~1.5 days if timestep = 5 mins
-	int durationPeriod = 576;
+	int incubationPeriod = 100;//334; // ~1.5 days if timestep = 5 mins
+	int durationPeriod = 288;
 	
 	public static int stage_INCUBATING = 1;
 	public static int stage_ACUTE = 2;
@@ -41,11 +41,13 @@ public class Cholera extends Disease {
 		else if(stage == stage_ACUTE){
 			ModernPump world = (ModernPump) state;
 			Bag exposed = world.humanLayer.getObjectsWithinDistance(host.getGeometry(), transmissableRadius(host, null));
-			if (exposed.size() <= 1)
+			if (exposed.size() <= 1){
+				state.schedule.scheduleOnce(state.schedule.getTime() + 1, this);
 				return;
+			}
 			for (Object o : exposed) {
-				if (!((Human) o).infectedWith(name) && world.random.nextDouble() < transmissability(host, (DiseaseVector) o))
-					((Human) o).acquireDisease(copy());
+				if (!((HumanTeleporter) o).infectedWith(name) && world.random.nextDouble() < transmissability(host, (DiseaseVector) o))
+					((HumanTeleporter) o).acquireDisease(copy());
 			}
 			
 			timeInStage++;
@@ -53,8 +55,24 @@ public class Cholera extends Disease {
 		}
 		
 		else if(stage == stage_INCUBATING){
-			stage = stage_ACUTE;
-			host.changeStage(stage);
+			
+			ModernPump world = (ModernPump) state;
+			Bag exposed = world.humanLayer.getObjectsWithinDistance(host.getGeometry(), transmissableRadius(host, null));
+			if (exposed.size() <= 1){
+				state.schedule.scheduleOnce(state.schedule.getTime() + 1, this);
+				return;
+			}
+			for (Object o : exposed) {
+				if (!((HumanTeleporter) o).infectedWith(name) && world.random.nextDouble() < transmissability(host, (DiseaseVector) o))
+					((HumanTeleporter) o).acquireDisease(copy());
+			}
+
+			timeInStage++;
+			if(timeInStage > incubationPeriod){
+				stage = stage_ACUTE;
+				host.changeStage(stage);
+				timeInStage = 0;
+			}
 			state.schedule.scheduleOnce(state.schedule.getTime() + 1, this);
 		}
 	}
@@ -62,7 +80,7 @@ public class Cholera extends Disease {
 	public void start(Schedule schedule){
 		stage = stage_INCUBATING;
 		host.changeStage(stage);
-		schedule.scheduleOnce(schedule.getTime() + incubationPeriod, this);
+		schedule.scheduleOnce(schedule.getTime() + 1, this);
 	}
 	
 	public Disease copy(){
@@ -72,7 +90,12 @@ public class Cholera extends Disease {
 
 	@Override
 	public double transmissableRadius(DiseaseVector host, DiseaseVector target){
-		return 60;
+		return 200;
+	}
+	
+	@Override
+	public double transmissability(DiseaseVector host, DiseaseVector target){
+		return .05;
 	}
 	
 }
