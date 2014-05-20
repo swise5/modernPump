@@ -65,7 +65,7 @@ public class ModernPump extends SimState {
 	/////////////// Model Parameters ///////////////////////////////////
 	
 	private static final long serialVersionUID = 1L;
-	public int grid_width = 600;
+	public int grid_width = 800;
 	public int grid_height = 500;
 	public static double resolution = 5;// the granularity of the simulation 
 				// (fiddle around with this to merge nodes into one another)
@@ -160,7 +160,9 @@ public class ModernPump extends SimState {
 			// standardize the MBRs so that the visualization lines up
 			
 			MBR = roadLayer.getMBR();
-			MBR.init(750000, 772000, 2009500, 2028500); // 22 18  
+//			MBR.init(740000, 780000, 2000000, 2040000); // 35 22  
+			MBR.init(738000, 779000, 2008000, 2034000); // 35 22  
+//			MBR.init(750000, 772000, 2009500, 2028500); // 22 18  
 //			MBR.init(756000, 766000, 2015500, 2022500);
 			roadLayer.setMBR(MBR);
 			//baseLayer.setMBR(MBR);
@@ -616,7 +618,9 @@ public class ModernPump extends SimState {
 	// reset the agent layer's MBR
 	public void resetLayers(){
 		MBR = roadLayer.getMBR();
-		MBR.init(745000, 775000, 2015000, 2030000);
+//		MBR.init(740000, 780000, 2000000, 2040000); // 35 22  
+		MBR.init(738000, 779000, 2008000, 2034000); // 35 22  
+//		MBR.init(745000, 775000, 2015000, 2030000);
 		this.humanLayer.setMBR(MBR);
 		//this.baseLayer.setMBR(MBR);
 	}

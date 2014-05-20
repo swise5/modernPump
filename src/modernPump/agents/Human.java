@@ -333,8 +333,9 @@ public class Human extends TrafficAgent implements Serializable, DiseaseVector {
 
 			path = null;		
 			this.currentActivity = this.activity_travel;
-			headFor((Coordinate)((GeoNode)world.majorRoadNodesLayer.getGeometries().get(
-					world.random.nextInt(world.majorRoadNodesLayer.getGeometries().size()))).geometry.getCoordinate().clone(), familiarRoadNetwork);
+			Coordinate destination = world.humans.get(world.random.nextInt(world.humans.size())).home;
+			headFor(destination, familiarRoadNetwork);
+//					(Coordinate)((GeoNode)world.majorRoadNodesLayer.getGeometries().get(world.random.nextInt(world.majorRoadNodesLayer.getGeometries().size()))).geometry.getCoordinate().clone(), familiarRoadNetwork);
 			navigate(ModernPump.resolution);
 //			System.out.println(time + "\t" + (time + 1));
 			world.schedule.scheduleOnce(time + 1, 100 + world.random.nextInt(world.humans.size()), this);

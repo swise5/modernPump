@@ -48,6 +48,7 @@ public class ModernPumpWithUI extends GUIState {
 	private GeomVectorFieldPortrayal map = new GeomVectorFieldPortrayal();
 	private GeomVectorFieldPortrayal roads = new GeomVectorFieldPortrayal();
 	private GeomVectorFieldPortrayal humans = new GeomVectorFieldPortrayal();
+	private GeomVectorFieldPortrayal health = new GeomVectorFieldPortrayal();
 
 //	private FastValueGridPortrayal2D heatmap = new FastValueGridPortrayal2D();	
 		
@@ -89,10 +90,16 @@ public class ModernPumpWithUI extends GUIState {
 		
 		roads.setField(world.roadLayer);
 		roads.setPortrayalForAll(new GeomPortrayal(Color.white, false));
-				
+		roads.setImmutableField(true);		
+		
+		health.setField(world.medicalLayer);
+		health.setPortrayalForAll(new FilledPolyPortrayal(Color.blue, Color.black, 100, true));
+		health.setImmutableField(true);
+		
 		humans.setField(world.humanLayer);
 		humans.setPortrayalForAll( new AttributePolyPortrayal(
-						new SimpleColorMap(new Color[]{new Color(0,255,0,30), Color.yellow, Color.red, Color.blue}),//new SimpleColorMap(0,1, new Color(255,255,0,100), new Color(255,0,0,150)),
+						new SimpleColorMap(new Color[]{new Color(200,200,200,30),//new Color(0,255,0,30), 
+								Color.yellow, Color.red, Color.blue}),//new SimpleColorMap(0,1, new Color(255,255,0,100), new Color(255,0,0,150)),
 						"Sick", new Color(0,0,0,0), true, 50));
 		
 //		heatmap.setField(world.heatmap.getGrid()); 
@@ -117,6 +124,7 @@ public class ModernPumpWithUI extends GUIState {
 //		display.attach(heatmap, "Heatmap", false);
 		display.attach(map, "Landscape");
 		display.attach(roads, "Roads");
+		display.attach(health, "Medical Centers");
 		display.attach(humans, "Agents");
 		
 		
