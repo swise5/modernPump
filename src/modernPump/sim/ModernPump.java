@@ -85,6 +85,7 @@ public class ModernPump extends SimState {
 	/////////////// Containers ///////////////////////////////////////
 
 	public GeomVectorField baseLayer = new GeomVectorField(grid_width, grid_height);
+	public GeomVectorField homesLayer = new GeomVectorField(grid_width, grid_height);
 	public GeomVectorField roadLayer = new GeomVectorField(grid_width, grid_height);
 	public GeomVectorField waterwayLayer = new GeomVectorField(grid_width, grid_height);	
 	public GeomVectorField medicalLayer = new GeomVectorField(grid_width, grid_height);
@@ -225,6 +226,7 @@ public class ModernPump extends SimState {
 			baseLayer.setMBR(MBR);
 			medicalLayer.setMBR(MBR);
 			humanLayer.setMBR(MBR);
+			homesLayer.setMBR(MBR);
 
 			System.out.println("done");
 
@@ -265,6 +267,7 @@ public class ModernPump extends SimState {
 			// set up the agents in the simulation
 			setupAgents(populationLayer);
 			humanLayer.setMBR(MBR);
+			homesLayer.setMBR(MBR);
 			
 /*			// for each of the Agents, set up relevant, environment-specific information
 			int aindex = 0;
@@ -604,7 +607,7 @@ public class ModernPump extends SimState {
 		for (Object o : populationLayer.getGeometries()) {
 			MasonGeometry g = (MasonGeometry) o;
 			Coordinate c = g.geometry.getCoordinate();
-			for (int i = 0; i < 10; i++) {
+			for (int i = 0; i < 50; i++) {
 //				GeoNode gn = (GeoNode) nodeBag.get(random.nextInt(numNodes));
 //				Coordinate myHome = (Coordinate) gn.geometry.getCoordinate().clone();
 //				double distance = Math.abs(random.nextGaussian()) * 1500;
@@ -617,7 +620,6 @@ public class ModernPump extends SimState {
 				Geometry point = fa.createPoint(myHome);
 				if(!landArea.contains(point)) continue;
 				HumanTeleporter hum = new HumanTeleporter("id_" + random.nextLong(), myHome, myHome, this);
-				humanLayer.addGeometry(hum);
 				humans.add(hum);
 			}
 		}

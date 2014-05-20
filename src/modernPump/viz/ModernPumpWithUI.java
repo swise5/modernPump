@@ -48,6 +48,7 @@ public class ModernPumpWithUI extends GUIState {
 	private GeomVectorFieldPortrayal map = new GeomVectorFieldPortrayal();
 	private GeomVectorFieldPortrayal roads = new GeomVectorFieldPortrayal();
 	private GeomVectorFieldPortrayal water = new GeomVectorFieldPortrayal();
+	private GeomVectorFieldPortrayal homes = new GeomVectorFieldPortrayal();
 	private GeomVectorFieldPortrayal humans = new GeomVectorFieldPortrayal();
 	private GeomVectorFieldPortrayal health = new GeomVectorFieldPortrayal();
 
@@ -106,6 +107,10 @@ public class ModernPumpWithUI extends GUIState {
 								Color.yellow, Color.red, new Color(100,100,100,30)}),//new SimpleColorMap(0,1, new Color(255,255,0,100), new Color(255,0,0,150)),
 						"Sick", new Color(0,0,0,0), true, 50));
 		
+//		homes.setField(world.homesLayer);
+//		homes.setPortrayalForAll( new FilledPolyPortrayal(new Color(50,50,50,10), new Color(0,0,0,0), 50, true));
+//		homes.setImmutableField(true);
+		
 //		heatmap.setField(world.heatmap.getGrid()); 
 //		heatmap.setMap(new SimpleColorMap(0, 10, Color.black, Color.red));
 		
@@ -129,8 +134,9 @@ public class ModernPumpWithUI extends GUIState {
 		display.attach(map, "Landscape");
 		display.attach(water, "Waterways");
 //		display.attach(roads, "Roads");
-		display.attach(health, "Medical Centers");
+//		display.attach(homes, "Baseline Population");
 		display.attach(humans, "Agents");
+		display.attach(health, "Medical Centers");
 		
 		
 		// ---TIMESTAMP---

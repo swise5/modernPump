@@ -131,6 +131,7 @@ public class HumanTeleporter extends TrafficAgent implements Serializable, Disea
 		this.decayParam = decayParam;
 
 		this.home = home;
+		this.speed = speed;
 
 		// schedule the Human to check in and make decisions at the beginning of the simulation (with
 		// ordering 100 so that it runs after the wildfire, etc)
@@ -140,7 +141,8 @@ public class HumanTeleporter extends TrafficAgent implements Serializable, Disea
 		currentActivity = activity_sleep;
 		
 		// add the Human to the space
-//		space.addGeometry(this);
+		space.addGeometry(this);
+		
 		
 		// set the Human to not initially be evacuating
 		this.addIntegerAttribute("Sick", 0);		
@@ -158,7 +160,7 @@ public class HumanTeleporter extends TrafficAgent implements Serializable, Disea
 		// update the heatmap, as the Human is moving (or trying to, at least)
 		//world.incrementHeatmap(this.geometry);
 
-		if(targetDestination == null)
+		if(targetDestination != null)
 			this.updateLoc(this.targetDestination);
 		targetDestination = null;
 		
@@ -169,7 +171,7 @@ public class HumanTeleporter extends TrafficAgent implements Serializable, Disea
 		
 		Coordinate destination = world.humans.get(world.random.nextInt(world.humans.size())).home;
 		double stdDev = world.random.nextGaussian();
-		double distanceStdDev = 10000 * Math.abs(stdDev), distanceMin = 10000 * (Math.abs(stdDev) - 1);
+		double distanceStdDev = 5000 * Math.abs(stdDev), distanceMin = 5000 * (Math.abs(stdDev) - 1);
 //		if(distanceStdDev >= 30000)
 //			System.out.println(distanceStdDev / 3.);
 		int tries = 0;
@@ -209,7 +211,7 @@ public class HumanTeleporter extends TrafficAgent implements Serializable, Disea
 				world.schedule.scheduleOnce(time + 12, 100 + world.random.nextInt(world.humans.size()), this);
 				return;
 			}
-			double timeDiff = Math.max(1,  geometry.getCoordinate().distance(targetDestination) / this.speed);
+			int timeDiff = (int) Math.max(1,  geometry.getCoordinate().distance(targetDestination) / this.speed);
 			world.schedule.scheduleOnce(time + timeDiff, 100 + world.random.nextInt(world.humans.size()), this);
 			return;
 		}
@@ -261,7 +263,8 @@ public class HumanTeleporter extends TrafficAgent implements Serializable, Disea
 			else {
 				this.currentActivity = this.activity_travel;
 				headFor(pickPlaceToVisit(), familiarRoadNetwork);
-				world.schedule.scheduleOnce(time + 1, 100 + world.random.nextInt(world.humans.size()), this);
+				int timeDiff = (int) Math.max(1,  geometry.getCoordinate().distance(targetDestination) / this.speed);
+				world.schedule.scheduleOnce(time + timeDiff, 100 + world.random.nextInt(world.humans.size()), this);
 				return;
 
 			}
@@ -275,7 +278,8 @@ public class HumanTeleporter extends TrafficAgent implements Serializable, Disea
 
 			this.currentActivity = this.activity_travel;
 			headFor(pickPlaceToVisit(), familiarRoadNetwork);
-			world.schedule.scheduleOnce(time + 1, 100 + world.random.nextInt(world.humans.size()), this);
+			int timeDiff = (int) Math.max(1,  geometry.getCoordinate().distance(targetDestination) / this.speed);
+			world.schedule.scheduleOnce(time + timeDiff, 100 + world.random.nextInt(world.humans.size()), this);
 			return;
 		}
 
