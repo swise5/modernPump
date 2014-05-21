@@ -13,8 +13,8 @@ public class Cholera extends Disease {
 	int stage = 0;
 	int timeInStage = 0;
 	
-	int incubationPeriod = 100;//334; // ~1.5 days if timestep = 5 mins
-	int durationPeriod = 288;
+	int incubationPeriod = 4;//334; // ~1.5 days if timestep = 5 mins
+	int durationPeriod = 10;
 	
 	public static int stage_INCUBATING = 1;
 	public static int stage_ACUTE = 2;
@@ -95,7 +95,7 @@ public class Cholera extends Disease {
 	
 	@Override
 	public double transmissability(DiseaseVector host, DiseaseVector target){
-		return .05;
+		return .8;
 	}
 	
 }

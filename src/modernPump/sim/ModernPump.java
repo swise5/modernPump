@@ -613,9 +613,9 @@ public class ModernPump extends SimState {
 //				double distance = Math.abs(random.nextGaussian()) * 1500;
 //				double degrees = random.nextDouble() * 2 * Math.PI;
 //				double xOffset = distance * Math.cos(degrees) + c.x;
-				double xOffset = random.nextGaussian() * 1000 + c.x;
+				double xOffset = random.nextGaussian() * 750 + c.x;
 //				double yOffset = distance * Math.sin(degrees) + c.y;
-				double yOffset = random.nextGaussian() * 1000 + c.y;
+				double yOffset = random.nextGaussian() * 750 + c.y;
 				Coordinate myHome = new Coordinate(xOffset, yOffset);
 				Geometry point = fa.createPoint(myHome);
 				if(!landArea.contains(point)) continue;

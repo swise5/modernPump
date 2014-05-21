@@ -136,7 +136,7 @@ public class ModernPumpWithUI extends GUIState {
 //		display.attach(roads, "Roads");
 //		display.attach(homes, "Baseline Population");
 		display.attach(humans, "Agents");
-		display.attach(health, "Medical Centers");
+//		display.attach(health, "Medical Centers");
 		
 		
 		// ---TIMESTAMP---
@@ -190,7 +190,7 @@ public class ModernPumpWithUI extends GUIState {
 		ModernPumpWithUI gui =  null;
 		
 		try {
-			ModernPump lb = new ModernPump(7033);//System.currentTimeMillis());
+			ModernPump lb = new ModernPump(70335);//System.currentTimeMillis());
 			gui = new ModernPumpWithUI(lb);
 		} catch (Exception ex){
 			System.out.println(ex.getStackTrace());
