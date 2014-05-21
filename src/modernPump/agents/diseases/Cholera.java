@@ -90,12 +90,12 @@ public class Cholera extends Disease {
 
 	@Override
 	public double transmissableRadius(DiseaseVector host, DiseaseVector target){
-		return 50;
+		return 30;
 	}
 	
 	@Override
 	public double transmissability(DiseaseVector host, DiseaseVector target){
-		return .8;
+		return .1;
 	}
 	
 }

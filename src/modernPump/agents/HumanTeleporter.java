@@ -470,6 +470,7 @@ public class HumanTeleporter extends TrafficAgent implements Serializable, Disea
 		this.addIntegerAttribute("Sick", 1);
 		System.out.println(myID + " INFECTED");
 		stress = 1;
+		world.diseasesLayer.addGeometry(new MasonGeometry(world.fa.createPoint(home)));
 	}
 
 	@Override

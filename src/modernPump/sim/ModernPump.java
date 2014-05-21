@@ -86,6 +86,7 @@ public class ModernPump extends SimState {
 
 	public GeomVectorField baseLayer = new GeomVectorField(grid_width, grid_height);
 	public GeomVectorField homesLayer = new GeomVectorField(grid_width, grid_height);
+	public GeomVectorField diseasesLayer = new GeomVectorField(grid_width, grid_height);
 	public GeomVectorField roadLayer = new GeomVectorField(grid_width, grid_height);
 	public GeomVectorField waterwayLayer = new GeomVectorField(grid_width, grid_height);	
 	public GeomVectorField medicalLayer = new GeomVectorField(grid_width, grid_height);
@@ -188,7 +189,7 @@ public class ModernPump extends SimState {
 			roadNodes = roads.getAllNodes();
 			testNetworkForIssues(roads);
 			
-			// set up roads as being "open" and assemble the list of potential terminii
+/*			// set up roads as being "open" and assemble the list of potential terminii
 			roadLayer = new GeomVectorField(grid_width, grid_height);
 			for(Object o: roadNodes){
 				GeoNode n = (GeoNode) o;
@@ -217,7 +218,7 @@ public class ModernPump extends SimState {
 				}
 
 			}
-
+*/
 			// reset MBRS in case it got messed up during all the manipulation
 			roadLayer.setMBR(MBR);			
 			networkLayer.setMBR(MBR);
@@ -227,6 +228,7 @@ public class ModernPump extends SimState {
 			medicalLayer.setMBR(MBR);
 			humanLayer.setMBR(MBR);
 			homesLayer.setMBR(MBR);
+			diseasesLayer.setMBR(MBR);
 
 			System.out.println("done");
 
@@ -234,7 +236,7 @@ public class ModernPump extends SimState {
 			///////// Clean up roads for Agents to use ///////////
 			/////////////////////
 						
-			Network majorRoads = extractMajorRoads();
+		/*	Network majorRoads = extractMajorRoads();
 			testNetworkForIssues(majorRoads);
 
 			// assemble list of secondary versus local roads
@@ -258,7 +260,7 @@ public class ModernPump extends SimState {
 				}
 			}
 
-			System.gc();
+	*/		System.gc();
 			
 			//////////////////////////////////////////////
 			////////////////// AGENTS ///////////////////
@@ -613,9 +615,9 @@ public class ModernPump extends SimState {
 //				double distance = Math.abs(random.nextGaussian()) * 1500;
 //				double degrees = random.nextDouble() * 2 * Math.PI;
 //				double xOffset = distance * Math.cos(degrees) + c.x;
-				double xOffset = random.nextGaussian() * 750 + c.x;
+				double xOffset = random.nextGaussian() * 100 + c.x;
 //				double yOffset = distance * Math.sin(degrees) + c.y;
-				double yOffset = random.nextGaussian() * 750 + c.y;
+				double yOffset = random.nextGaussian() * 100 + c.y;
 				Coordinate myHome = new Coordinate(xOffset, yOffset);
 				Geometry point = fa.createPoint(myHome);
 				if(!landArea.contains(point)) continue;

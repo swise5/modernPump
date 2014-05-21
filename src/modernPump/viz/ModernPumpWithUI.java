@@ -50,6 +50,7 @@ public class ModernPumpWithUI extends GUIState {
 	private GeomVectorFieldPortrayal water = new GeomVectorFieldPortrayal();
 	private GeomVectorFieldPortrayal homes = new GeomVectorFieldPortrayal();
 	private GeomVectorFieldPortrayal humans = new GeomVectorFieldPortrayal();
+	private GeomVectorFieldPortrayal diseases = new GeomVectorFieldPortrayal();
 	private GeomVectorFieldPortrayal health = new GeomVectorFieldPortrayal();
 
 //	private FastValueGridPortrayal2D heatmap = new FastValueGridPortrayal2D();	
@@ -87,29 +88,37 @@ public class ModernPumpWithUI extends GUIState {
 		
 		ModernPump world = (ModernPump) state;
 		map.setField(world.baseLayer);
-		map.setPortrayalForAll(new GeomPortrayal(new Color(30,30,30), true));
+		map.setPortrayalForAll(new GeomPortrayal(new Color(241,244,199), true));
+//		map.setPortrayalForAll(new GeomPortrayal(new Color(30,30,30), true));
 		map.setImmutableField(true);
 		
 		roads.setField(world.roadLayer);
-		roads.setPortrayalForAll(new GeomPortrayal(Color.white, false));
+		roads.setPortrayalForAll(new GeomPortrayal(new Color(249, 203, 124), 4));
 		roads.setImmutableField(true);		
 
 		water.setField(world.waterwayLayer);
-		water.setPortrayalForAll(new GeomPortrayal(Color.blue, false));
+//		water.setPortrayalForAll(new GeomPortrayal(Color.blue, false));
+		water.setPortrayalForAll(new GeomPortrayal(new Color(33, 112, 181), false));
 
 		health.setField(world.medicalLayer);
 		health.setPortrayalForAll(new FilledPolyPortrayal(Color.green, Color.black, 100, true));
 		health.setImmutableField(true);
 		
-		humans.setField(world.humanLayer);
+/*		humans.setField(world.humanLayer);
 		humans.setPortrayalForAll( new AttributePolyPortrayal(
-						new SimpleColorMap(new Color[]{new Color(50,50,50,10),//new Color(0,255,0,30), 
-								Color.yellow, Color.red, new Color(100,100,100,30)}),//new SimpleColorMap(0,1, new Color(255,255,0,100), new Color(255,0,0,150)),
+						new SimpleColorMap(new Color[]{new Color(146,147,121, 40),//new Color(50,50,50,10), 
+								Color.red, Color.red, new Color(100,100,100,30)}),//new SimpleColorMap(0,1, new Color(255,255,0,100), new Color(255,0,0,150)),
 						"Sick", new Color(0,0,0,0), true, 50));
+	*/
+		humans.setField(world.humanLayer);
+		humans.setPortrayalForAll( new GeomPortrayal(new Color(146,147,121), 50, true));
+				
+		diseases.setField(world.diseasesLayer);
+		diseases.setPortrayalForAll(new GeomPortrayal(Color.red, 50));
 		
-//		homes.setField(world.homesLayer);
-//		homes.setPortrayalForAll( new FilledPolyPortrayal(new Color(50,50,50,10), new Color(0,0,0,0), 50, true));
-//		homes.setImmutableField(true);
+		homes.setField(world.homesLayer);
+		homes.setPortrayalForAll( new GeomPortrayal(new Color(146,147,121, 40), 50, true));
+		homes.setImmutableField(true);
 		
 //		heatmap.setField(world.heatmap.getGrid()); 
 //		heatmap.setMap(new SimpleColorMap(0, 10, Color.black, Color.red));
@@ -117,7 +126,8 @@ public class ModernPumpWithUI extends GUIState {
 		// reset stuff
 		// reschedule the displayer
 		display.reset();
-		display.setBackdrop(Color.black);
+		display.setBackdrop(new Color(195, 225, 248));
+//		display.setBackdrop(Color.black);
 
 		// redraw the display
 		display.repaint();
@@ -132,10 +142,11 @@ public class ModernPumpWithUI extends GUIState {
 
 //		display.attach(heatmap, "Heatmap", false);
 		display.attach(map, "Landscape");
-		display.attach(water, "Waterways");
-//		display.attach(roads, "Roads");
 //		display.attach(homes, "Baseline Population");
 		display.attach(humans, "Agents");
+		display.attach(diseases, "Diseases");
+		display.attach(water, "Waterways");
+		display.attach(roads, "Roads");
 //		display.attach(health, "Medical Centers");
 		
 		
@@ -190,7 +201,7 @@ public class ModernPumpWithUI extends GUIState {
 		ModernPumpWithUI gui =  null;
 		
 		try {
-			ModernPump lb = new ModernPump(70335);//System.currentTimeMillis());
+			ModernPump lb = new ModernPump(703356);//System.currentTimeMillis());
 			gui = new ModernPumpWithUI(lb);
 		} catch (Exception ex){
 			System.out.println(ex.getStackTrace());
